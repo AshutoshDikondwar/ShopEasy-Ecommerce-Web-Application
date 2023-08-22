@@ -2,6 +2,7 @@ package com.app.collections;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -12,12 +13,14 @@ import lombok.ToString;
 @Setter
 @ToString
 @Builder
-@Document(collation = "user")
+@Document(collection = "user")
 public class User {
 	@Id
-	private String userName;
+	private String id;
 	private String name;
+	@Field("email")
 	private String email;
+	@Field("password")
 	private String password;
 	private Avatar avatar;
 	private String role;
@@ -26,8 +29,8 @@ public class User {
 		// TODO Auto-generated constructor stub
 	}
 
-	public User(String userName, String name, String email, String password, Avatar avatar, String role) {
-		this.userName = userName;
+	public User(String id,String name, String email, String password, Avatar avatar, String role) {
+		this.id=id;
 		this.name = name;
 		this.email = email;
 		this.password = password;
