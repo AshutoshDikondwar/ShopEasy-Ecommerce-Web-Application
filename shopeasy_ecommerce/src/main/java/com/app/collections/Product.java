@@ -28,7 +28,7 @@ public class Product {
 	private Long stock;
 	private int noOfReviews;
 	private Reviews review;
-//	private User user;
+//	Add private User user Lastly;
 	private LocalDate createdAt;
 	
 	public Product() {
