@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.app.custom_exceptions.ErrorHandler;
 import com.app.custom_exceptions.ResourceNotFoundException;
 import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.ApiResponse;
@@ -31,6 +32,16 @@ public class GlobalExceptionHandling {
 	@ExceptionHandler(UserNotFoundException.class)
 	public ResponseEntity<?> handleUserNotFoundException(UserNotFoundException e) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
+	}
+
+	@ExceptionHandler(ErrorHandler.class)
+	public ResponseEntity<?> handleErrorHandler(ErrorHandler e) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<?> handleException(Exception e) {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(e.getMessage()));
 	}
 
 }

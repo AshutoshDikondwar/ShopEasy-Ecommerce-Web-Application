@@ -23,14 +23,15 @@ public class User {
 	@Field("password")
 	private String password;
 	private Avatar avatar;
-	private String role;
-	
+	@Field("role")
+	private String role="user";
+
 	public User() {
 		// TODO Auto-generated constructor stub
 	}
 
-	public User(String id,String name, String email, String password, Avatar avatar, String role) {
-		this.id=id;
+	public User(String id, String name, String email, String password, Avatar avatar, String role) {
+		this.id = id;
 		this.name = name;
 		this.email = email;
 		this.password = password;

@@ -1,6 +1,7 @@
 package com.app.controller;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -8,13 +9,15 @@ import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +27,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.collections.User;
+import com.app.custom_exceptions.ErrorHandler;
+import com.app.custom_exceptions.MalFormedTokenException;
+import com.app.custom_exceptions.ResourceNotFoundException;
+import com.app.custom_exceptions.TokenExpiredException;
 import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.AuthRequest;
 import com.app.dto.AuthResponse;
@@ -51,16 +57,15 @@ public class UserController {
 	private JwtUtil jwtUtil;
 
 	@PostMapping("/login")
-	public String loginUser(@RequestBody AuthRequest loginDto, HttpSession session) throws UserNotFoundException {
-		return userService.loginUser(loginDto);
-
+	public AuthResponse loginUser(@RequestBody AuthRequest loginDto, HttpServletResponse response)
+			throws UserNotFoundException {
+		return userService.loginUser(loginDto, response);
 	}
 
 	@PostMapping("/create")
 	public String createUser(@Valid @RequestBody UserDTO user, HttpSession session) {
 		userService.createUser(user);
 		return user.getName();
-
 	}
 
 	@PutMapping("/update/{id}")
@@ -80,8 +85,15 @@ public class UserController {
 	}
 
 	@GetMapping("/all")
-	public List<UserDTO> findAllUser() {
-		return userService.findAllUser();
+	public List<UserDTO> findAllUser(@CookieValue(name = "token") String token, HttpSession session)
+			throws AccessDeniedException, TokenExpiredException, MalFormedTokenException, ResourceNotFoundException,
+			ErrorHandler {
+		return userService.findAllUser(token, session);
+	}
+
+	@GetMapping("/logout")
+	public ResponseEntity<?> logout(HttpServletResponse res) {
+		return ResponseEntity.status(HttpStatus.OK).body(userService.logout(res));
 	}
 
 	@PostMapping("/authenticate")

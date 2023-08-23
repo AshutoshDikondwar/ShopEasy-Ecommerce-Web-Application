@@ -14,7 +14,7 @@ import lombok.ToString;
 @Getter
 @ToString
 public class UserDTO {
-	
+
 	@NotBlank(message = "Email can't be blank")
 	private String name;
 	@NotBlank(message = "Email can't be blank")
