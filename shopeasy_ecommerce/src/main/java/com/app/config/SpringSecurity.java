@@ -2,7 +2,8 @@ package com.app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -44,7 +45,7 @@ public class SpringSecurity {
 //
 //		return http.build();
 //	}
-	
+
 //	@Bean
 //	public InMemoryUserDetailsManager userDetailsManager(){
 //		UserDetails user=User.withDefaultPasswordEncoder()
@@ -63,16 +64,14 @@ public class SpringSecurity {
 //	}
 //	
 	@Bean
-	public SecurityFilterChain myAuthorization(HttpSecurity http)throws Exception{
-		return http
-				.csrf(csrf->csrf.disable())
-				.authorizeRequests(auth->{
-					auth.antMatchers( "/swagger*/**", "/v*/api-docs/**","/user/all").permitAll();
+	public SecurityFilterChain myAuthorization(HttpSecurity http) throws Exception {
+		return http.csrf(csrf -> csrf.disable()).authorizeRequests(auth -> {
+			auth.antMatchers("/swagger*/**", "/v*/api-docs/**", "/user/all").permitAll();
+			auth.antMatchers("/product/**").permitAll();
+			auth.antMatchers("/order/**").permitAll();
 //					auth.antMatchers("/user/**").hasRole("USER");
 //					auth.antMatchers("/admin").hasRole("ADMIN");
-				})
-				.httpBasic(Customizer.withDefaults())
-				.build();
+		}).httpBasic(Customizer.withDefaults()).build();
 	}
 
 	@Bean
