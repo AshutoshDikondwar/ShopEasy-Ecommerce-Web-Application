@@ -20,7 +20,7 @@ public interface UserService {
 
 	String createUser(UserDTO user);
 
-	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response) throws UserNotFoundException;
+	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session) throws UserNotFoundException;
 
 	public String updateUser(String id, UpdateUserDTO updateDto) throws UserNotFoundException;
 

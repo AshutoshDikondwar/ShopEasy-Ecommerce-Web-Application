@@ -57,9 +57,9 @@ public class UserController {
 	private JwtUtil jwtUtil;
 
 	@PostMapping("/login")
-	public AuthResponse loginUser(@RequestBody AuthRequest loginDto, HttpServletResponse response)
+	public AuthResponse loginUser(@RequestBody AuthRequest loginDto, HttpServletResponse response, HttpSession session)
 			throws UserNotFoundException {
-		return userService.loginUser(loginDto, response);
+		return userService.loginUser(loginDto, response,session);
 	}
 
 	@PostMapping("/create")
@@ -85,10 +85,10 @@ public class UserController {
 	}
 
 	@GetMapping("/all")
-	public List<UserDTO> findAllUser(@CookieValue(name = "token") String token, HttpSession session)
+	public List<UserDTO> findAllUser(@CookieValue(name = "tokenjwt") String tokenjwt, HttpSession session)
 			throws AccessDeniedException, TokenExpiredException, MalFormedTokenException, ResourceNotFoundException,
 			ErrorHandler {
-		return userService.findAllUser(token, session);
+		return userService.findAllUser(tokenjwt, session);
 	}
 
 	@GetMapping("/logout")

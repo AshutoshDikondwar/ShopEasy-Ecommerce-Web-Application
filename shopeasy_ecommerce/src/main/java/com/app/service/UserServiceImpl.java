@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
 	private JwtUtil jwtUtil;
 
 	@Override
-	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response) throws UserNotFoundException {
+	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session) throws UserNotFoundException {
 		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 
 		if (loginDto.getEmail() == null || loginDto.getPassword() == null) {
@@ -57,6 +57,9 @@ public class UserServiceImpl implements UserService {
 
 			if (bcrypt.matches(loginDto.getPassword(), user.getPassword())) {
 				final String jwt = jwtUtil.generateToken(user.getId());
+				System.out.println("login user token= " + jwt);
+				Optional<User> opUser = userRepo.findById(user.getId());
+				session.setAttribute("user", opUser.get());
 				return SaveCookie.sendToken(jwt, response);
 
 //				return "Authenticated user";
@@ -120,14 +123,14 @@ public class UserServiceImpl implements UserService {
 
 //	ADMIN
 	@Override
-	public List<UserDTO> findAllUser(String token, HttpSession session) throws AccessDeniedException,
+	public List<UserDTO> findAllUser(String tokenjwt, HttpSession session) throws AccessDeniedException,
 			TokenExpiredException, MalFormedTokenException, ResourceNotFoundException, ErrorHandler {
 
 		// Authenticate user
-		if (token == null) {
+		if (tokenjwt == null) {
 			throw new ResourceNotFoundException("Please login to access this resources");
 		}
-		final Claims decodeDate = jwtUtil.verify(token);
+		final Claims decodeDate = jwtUtil.verify(tokenjwt);
 		String user_id = decodeDate.getSubject();
 		Optional<User> opUser = userRepo.findById(user_id);
 		session.setAttribute("user", opUser.get());
@@ -147,7 +150,6 @@ public class UserServiceImpl implements UserService {
 			UserDTO u = mapper.map(i, UserDTO.class);
 			userDto.add(u);
 		});
-		
 
 		return userDto;
 	}
