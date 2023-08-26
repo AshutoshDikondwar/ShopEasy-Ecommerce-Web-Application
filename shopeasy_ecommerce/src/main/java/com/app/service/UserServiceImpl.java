@@ -72,8 +72,8 @@ public class UserServiceImpl implements UserService {
 
 			if (bcrypt.matches(loginDto.getPassword(), user.getPassword())) {
 				final String jwt = jwtUtil.generateToken(user.getId());
-				Optional<User> opUser = userRepo.findById(user.getId());
-				session.setAttribute("user", opUser.get());
+//				Optional<User> opUser = userRepo.findById(user.getId());
+				session.setAttribute("user", user);
 				return SaveCookie.sendToken(jwt, response);
 
 			} else {
@@ -173,7 +173,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public String logout(HttpServletResponse res) {
-		Cookie cookie = new Cookie("token", null);
+		Cookie cookie = new Cookie("tokenjwt", null);
 		cookie.setMaxAge(0);
 		res.addCookie(cookie);
 		return "Logged out Successfully";

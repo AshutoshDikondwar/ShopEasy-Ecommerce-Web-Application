@@ -14,6 +14,7 @@ import com.app.collections.Order;
 import com.app.collections.User;
 import com.app.custom_exceptions.ErrorHandler;
 import com.app.custom_exceptions.ResourceNotFoundException;
+import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.OrderDto;
 import com.app.repository.OrderRepository;
 
@@ -36,6 +37,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		Order order = mapper.map(orderdto, Order.class);
+		order.setUser(storedUser.getId());
 		orderrepository.save(order);
 		return "Ordered Successfully";
 	}
@@ -104,6 +106,17 @@ public class OrderServiceImpl implements OrderService {
 		orderrepository.save(order);
 
 		return null;
+	}
+
+	@Override
+	public List<Order> getMyOrders(HttpSession session) throws UserNotFoundException {
+		User storedUser = (User) session.getAttribute("user");
+		if (storedUser == null) {
+			throw new UserNotFoundException("User Not found");
+		}
+		
+		return orderrepository.findByUser(storedUser.getId());
+		
 	}
 
 	// MY ORDERS

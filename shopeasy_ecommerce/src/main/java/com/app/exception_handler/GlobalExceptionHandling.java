@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.app.custom_exceptions.ErrorHandler;
+import com.app.custom_exceptions.ProductNotFoundException;
 import com.app.custom_exceptions.ResourceNotFoundException;
 import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.ApiResponse;
@@ -36,6 +37,11 @@ public class GlobalExceptionHandling {
 
 	@ExceptionHandler(ErrorHandler.class)
 	public ResponseEntity<?> handleErrorHandler(ErrorHandler e) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
+	}
+
+	@ExceptionHandler(ProductNotFoundException.class)
+	public ResponseEntity<?> handleProductNotFoundException(ProductNotFoundException e) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
 	}
 

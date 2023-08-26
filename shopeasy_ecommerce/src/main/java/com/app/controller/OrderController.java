@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.app.collections.Order;
 import com.app.custom_exceptions.ErrorHandler;
 import com.app.custom_exceptions.ResourceNotFoundException;
+import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.OrderDto;
 import com.app.service.OrderService;
 
@@ -52,6 +53,11 @@ public class OrderController {
 	public Order updateOrderStatus(@PathVariable String id, @RequestBody String status, HttpSession session)
 			throws ErrorHandler {
 		return orderservice.updateOrderStatus(id, status, session);
+	}
+
+	@GetMapping("/me")
+	public List<Order> getMyOrders(HttpSession session) throws UserNotFoundException {
+		return orderservice.getMyOrders(session);
 	}
 
 }

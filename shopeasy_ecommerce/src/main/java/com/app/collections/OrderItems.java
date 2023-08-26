@@ -8,6 +8,6 @@ public class OrderItems {
 	private double price;
 	private double quantity;
 	private String image;
-	// Add ProductId in orderItems;
-	
+	private String product;
+
 }

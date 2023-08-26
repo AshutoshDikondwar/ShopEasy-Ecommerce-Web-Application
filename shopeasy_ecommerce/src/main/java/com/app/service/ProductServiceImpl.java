@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpSession;
 
@@ -17,11 +18,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.app.collections.Product;
+import com.app.collections.Review;
 import com.app.collections.User;
 import com.app.custom_exceptions.ErrorHandler;
+import com.app.custom_exceptions.ProductNotFoundException;
 import com.app.custom_exceptions.ResourceNotFoundException;
 import com.app.dto.ALlProductandCountDTO;
 import com.app.dto.ProductDto;
+import com.app.dto.ReviewDto;
 import com.app.repository.ProductRepository;
 
 @Service
@@ -47,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
 		}
 
 		Product prod = mapper.map(productdto, Product.class);
+		prod.setUser(storedUser.getId());
 		productRepo.save(prod);
 		return "product added successfully ";
 	}
@@ -173,7 +178,95 @@ public class ProductServiceImpl implements ProductService {
 			return productRepo.save(product);
 		}
 		return null;
+	}
 
+	@Override
+	public String createProductReview(ReviewDto reviewDto, HttpSession session) throws ProductNotFoundException {
+		User storedUser = (User) session.getAttribute("user");
+
+		Review review = new Review();
+		review.setUser(storedUser.getId());
+		review.setName(storedUser.getName());
+		review.setRating(reviewDto.getRating());
+		review.setComment(reviewDto.getComment());
+
+		Optional<Product> opProduct = productRepo.findById(reviewDto.getProductId());
+		if (opProduct == null) {
+			throw new ProductNotFoundException("Product Not found");
+		}
+		Product product = opProduct.get();
+		System.out.println("Product Name=== " + product.getProdName());
+		System.out.println("Review List" + product.getReview());
+		boolean isReviewed = product.getReview().stream().anyMatch(p -> p.getUser().equals(storedUser.getId()));
+
+		if (isReviewed) {
+			for (Review r : product.getReview()) {
+				if (storedUser.getId().equals(r.getUser())) {
+					r.setComment(reviewDto.getComment());
+					r.setRating(reviewDto.getRating());
+				}
+			}
+		} else {
+			List<Review> existingReviews = product.getReview();
+			existingReviews.add(review);
+			product.setReview(existingReviews);
+			product.setNoOfReviews(existingReviews.size());
+		}
+		int avg = 0;
+		for (Review r : product.getReview()) {
+			avg += r.getRating();
+		}
+		product.setRatings(avg / product.getReview().size());
+
+		productRepo.save(product);
+
+		return "Review added";
+	}
+
+	@Override
+	public List<Review> getProductReviews(String id) throws ProductNotFoundException {
+		Optional<Product> opProduct = productRepo.findById(id);
+		if (opProduct == null) {
+			throw new ProductNotFoundException("Product Not found");
+		}
+		Product product = opProduct.get();
+		return product.getReview();
+
+	}
+
+	@Override
+	public String deleteReview(String productId, String id, HttpSession session)
+			throws ProductNotFoundException, ErrorHandler {
+
+		User storedUser = (User) session.getAttribute("user");
+
+		if (storedUser == null) {
+			throw new ErrorHandler("To Order this Product Login first");
+		}
+
+		Optional<Product> opProduct = productRepo.findById(productId);
+		if (opProduct == null) {
+			throw new ProductNotFoundException("Product Not found");
+		}
+		Product product = opProduct.get();
+		List<Review> updatedReview = product.getReview().stream().filter(r -> !r.getUser().equals(id))
+				.collect(Collectors.toList());
+
+		product.setReview(updatedReview);
+
+		int avg = 0;
+		for (Review r : product.getReview()) {
+			avg += r.getRating();
+		}
+		if (updatedReview.size() == 0) {
+			product.setRatings(0);
+		} else {
+			product.setRatings(avg / product.getReview().size());
+		}
+		product.setNoOfReviews(updatedReview.size());
+		productRepo.save(product);
+
+		return "Review Deleted successfully";
 	}
 
 }

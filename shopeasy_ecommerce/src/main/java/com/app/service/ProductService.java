@@ -5,10 +5,13 @@ import java.util.List;
 import javax.servlet.http.HttpSession;
 
 import com.app.collections.Product;
+import com.app.collections.Review;
 import com.app.custom_exceptions.ErrorHandler;
+import com.app.custom_exceptions.ProductNotFoundException;
 import com.app.custom_exceptions.ResourceNotFoundException;
 import com.app.dto.ALlProductandCountDTO;
 import com.app.dto.ProductDto;
+import com.app.dto.ReviewDto;
 
 public interface ProductService {
 
@@ -24,4 +27,10 @@ public interface ProductService {
 	Product getProductById(String id) throws ResourceNotFoundException;
 
 	public Product updateProduct(String id, ProductDto productDto);
+
+	public String createProductReview(ReviewDto reviewDto, HttpSession session) throws ProductNotFoundException;
+	
+	public List<Review> getProductReviews(String id) throws ProductNotFoundException;
+	
+	public String deleteReview(String productId, String id,HttpSession session) throws ProductNotFoundException, ErrorHandler;
 }

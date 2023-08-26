@@ -22,14 +22,14 @@ public class Product {
 	private String prodName;
 	private String description;
 	private double price;
-	private int rating;
+	private int ratings;
 	private List<Image> image;
 	private String category;
 	private int stock;
 	private int noOfReviews;
-	private List<Reviews> review;
-//	Add private User user Lastly;
-	private LocalDate createdAt;
+	private List<Review> review = new ArrayList<Review>();
+	private String user;
+	private LocalDate createdAt = LocalDate.now();
 
 	public Product() {
 
@@ -49,13 +49,13 @@ public class Product {
 //		this.review = review;
 //		this.createdAt = createdAt;
 //	}
-	public Product(String prodName, String description, double price, int rating, List<Image> image, String category,
-			int stock, int noOfReviews, List<Reviews> review, LocalDate createdAt) {
+	public Product(String prodName, String description, double price, int ratings, List<Image> image, String category,
+			int stock, int noOfReviews, List<Review> review, LocalDate createdAt) {
 		super();
 		this.prodName = prodName;
 		this.description = description;
 		this.price = price;
-		this.rating = rating;
+		this.ratings = ratings;
 		this.image = image;
 		this.category = category;
 		this.stock = stock;

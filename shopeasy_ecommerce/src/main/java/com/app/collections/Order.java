@@ -1,6 +1,7 @@
 package com.app.collections;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -17,7 +18,7 @@ import lombok.ToString;
 public class Order {
 	
 	private String id;
-	//Add user in order Lastly
+	private String user;
 	private ShippingInfo shippinginfo;
 	private PaymentInfo paymentinfo;
 	private LocalDate date=LocalDate.now();
@@ -26,7 +27,7 @@ public class Order {
 	private double shippingPrice;
 	private double totalPrice;
 	private String orderStatus;
-	private List<OrderItems>orderItems;
+	private List<OrderItems>orderItems=new ArrayList<OrderItems>();
 	
 	public Order() {
 		

@@ -74,9 +74,9 @@ public class SpringSecurity {
 		}).httpBasic(Customizer.withDefaults()).build();
 	}
 
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-		return configuration.getAuthenticationManager();
-	}
+//	@Bean
+//	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+//		return configuration.getAuthenticationManager();
+//	}
 
 }

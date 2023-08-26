@@ -46,14 +46,6 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 
-	@Autowired
-	private AuthenticationManager authenticationManager;
-
-	@Autowired
-	private UserDetailsImpl userDetailsImpl;
-
-	@Autowired
-	private JwtUtil jwtUtil;
 
 	@PostMapping("/login")
 	public AuthResponse loginUser(@RequestBody AuthRequest loginDto, HttpServletResponse response, HttpSession session)

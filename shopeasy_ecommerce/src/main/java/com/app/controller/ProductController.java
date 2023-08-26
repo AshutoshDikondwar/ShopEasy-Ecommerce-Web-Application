@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.collections.Product;
+import com.app.collections.Review;
 import com.app.custom_exceptions.ErrorHandler;
+import com.app.custom_exceptions.ProductNotFoundException;
 import com.app.custom_exceptions.ResourceNotFoundException;
 import com.app.dto.ALlProductandCountDTO;
 import com.app.dto.ProductDto;
+import com.app.dto.ReviewDto;
 import com.app.service.ProductService;
 
 @RestController
@@ -62,5 +65,22 @@ public class ProductController {
 	@PutMapping("/admin/update/{id}")
 	public Product updateProduct(@PathVariable String id, @RequestBody ProductDto product) {
 		return productservice.updateProduct(id, product);
+	}
+
+	@PutMapping("/review")
+	public String createProductReview(@RequestBody ReviewDto reviewDto, HttpSession session)
+			throws ProductNotFoundException {
+		return productservice.createProductReview(reviewDto, session);
+	}
+
+	@GetMapping("/reviews")
+	public List<Review> getAllReview(@RequestParam String id) throws ProductNotFoundException {
+		return productservice.getProductReviews(id);
+	}
+
+	@DeleteMapping("/review")
+	public String deleteReview(@RequestParam String productId, @RequestParam String id, HttpSession session)
+			throws ProductNotFoundException, ErrorHandler {
+		return productservice.deleteReview(productId, id, session);
 	}
 }
