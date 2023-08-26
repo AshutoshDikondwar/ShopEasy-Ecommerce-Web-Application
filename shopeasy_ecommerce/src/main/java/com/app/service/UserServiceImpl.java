@@ -1,6 +1,11 @@
 package com.app.service;
 
 import java.nio.file.AccessDeniedException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +16,8 @@ import javax.servlet.http.HttpSession;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +30,16 @@ import com.app.custom_exceptions.TokenExpiredException;
 import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.AuthRequest;
 import com.app.dto.AuthResponse;
-import com.app.dto.UpdateUserDTO;
+import com.app.dto.EmailDto;
+import com.app.dto.PasswordDto;
+import com.app.dto.UpdatePasswordDto;
+import com.app.dto.UpdateRole;
+import com.app.dto.UpdateUserProfileDto;
 import com.app.dto.UserDTO;
+import com.app.dto.UserResponseDto;
 import com.app.jwt.SaveCookie;
 import com.app.repository.UserRepository;
 import com.app.util.JwtUtil;
-
-import io.jsonwebtoken.Claims;
 
 @Service
 @Transactional
@@ -44,8 +54,13 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private JwtUtil jwtUtil;
 
+	@Autowired
+	private JavaMailSender javaMailSender;
+
+	// send user also in response
 	@Override
-	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session) throws UserNotFoundException {
+	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session)
+			throws UserNotFoundException {
 		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 
 		if (loginDto.getEmail() == null || loginDto.getPassword() == null) {
@@ -57,12 +72,10 @@ public class UserServiceImpl implements UserService {
 
 			if (bcrypt.matches(loginDto.getPassword(), user.getPassword())) {
 				final String jwt = jwtUtil.generateToken(user.getId());
-				System.out.println("login user token= " + jwt);
 				Optional<User> opUser = userRepo.findById(user.getId());
 				session.setAttribute("user", opUser.get());
 				return SaveCookie.sendToken(jwt, response);
 
-//				return "Authenticated user";
 			} else {
 				throw new UserNotFoundException("Invalid Credentials");
 			}
@@ -71,35 +84,19 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public String createUser(UserDTO userDto) {
+	public String createUser(UserDTO userDto) throws ErrorHandler {
 
 		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
+		User duplicateUser = userRepo.findByEmail(userDto.getEmail());
+		if (duplicateUser != null) {
+			throw new ErrorHandler("User alredy exists");
+		}
 		User user = mapper.map(userDto, User.class);
 		String encryptedPwd = bcrypt.encode(user.getPassword());
 		user.setPassword(encryptedPwd);
 		userRepo.save(user);
 
 		return user.getName();
-	}
-
-	@Override
-	public String updateUser(String id, UpdateUserDTO updateDto) throws UserNotFoundException {
-		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-		User user = userRepo.findById(id).orElseThrow(() -> new UserNotFoundException("User Not Found"));
-
-		if (bcrypt.matches(updateDto.getOldPassword(), user.getPassword())) {
-			if (bcrypt.matches(user.getPassword(), updateDto.getNewPassword())) {
-				throw new UserNotFoundException("Old password and New Password are same");
-			} else {
-				user.setName(updateDto.getName());
-				user.setPassword(bcrypt.encode(updateDto.getNewPassword()));
-				userRepo.save(user);
-			}
-
-		} else {
-			throw new UserNotFoundException("Invalid Credentials");
-		}
-		return "user updated successfully";
 	}
 
 	// ADMIN
@@ -113,12 +110,31 @@ public class UserServiceImpl implements UserService {
 
 	// ADMIN
 	@Override
-	public UserDTO getSingleUser(String id) throws UserNotFoundException {
+	public UserResponseDto getSingleUser(String id, HttpSession session) throws UserNotFoundException, ErrorHandler {
+
+		User storedUser = (User) session.getAttribute("user");
+
+		if (storedUser == null) {
+			throw new ErrorHandler("Please Login first");
+		}
+
+		// Authorize user("Admin")
+		String userRole = storedUser.getRole();
+		if (userRole.equals("Admin")) {
+
+		} else {
+			throw new ErrorHandler(storedUser + " is not allowed to access this resource");
+		}
+
 		User user = userRepo.findById(id).orElseThrow(() -> new UserNotFoundException("User Not Found"));
 
-		UserDTO userDto = mapper.map(user, UserDTO.class);
+		if (user == null) {
+			throw new UserNotFoundException("Invalid user id");
+		}
 
-		return userDto;
+		UserResponseDto userResponseDto = mapper.map(user, UserResponseDto.class);
+
+		return userResponseDto;
 	}
 
 //	ADMIN
@@ -130,13 +146,14 @@ public class UserServiceImpl implements UserService {
 		if (tokenjwt == null) {
 			throw new ResourceNotFoundException("Please login to access this resources");
 		}
-		final Claims decodeDate = jwtUtil.verify(tokenjwt);
-		String user_id = decodeDate.getSubject();
-		Optional<User> opUser = userRepo.findById(user_id);
-		session.setAttribute("user", opUser.get());
+
+		User storedUser = (User) session.getAttribute("user");
+
+		if (storedUser == null) {
+			throw new ErrorHandler("Please Login first");
+		}
 
 		// Authorize user("Admin")
-		User storedUser = (User) session.getAttribute("user");
 		String userRole = storedUser.getRole();
 		if (userRole.equals("Admin")) {
 
@@ -160,6 +177,193 @@ public class UserServiceImpl implements UserService {
 		cookie.setMaxAge(0);
 		res.addCookie(cookie);
 		return "Logged out Successfully";
+	}
+
+	@Override
+	public String forgotPassword(EmailDto emailDto) throws UserNotFoundException {
+		System.out.println("User email " + emailDto.getEmail());
+
+		User user = userRepo.findByEmail(emailDto.getEmail());
+
+		System.out.println("User name " + user.getName());
+		if (user == null)
+			throw new UserNotFoundException("Invalid email");
+		int expiresIn = 15;
+		StringBuilder tokenBuilder = new StringBuilder();
+		try {
+			SecureRandom secureRandom = SecureRandom.getInstanceStrong();
+			byte[] randomBytes = new byte[10];
+			secureRandom.nextBytes(randomBytes);
+
+			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+			byte[] hashBytes = messageDigest.digest(randomBytes);
+
+			for (byte hashByte : hashBytes) {
+				tokenBuilder.append(String.format("%02x", hashByte));
+			}
+
+			LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(expiresIn);
+			long expirationTimestamp = expirationTime.toEpochSecond(ZoneOffset.UTC);
+
+			tokenBuilder.append("_").append(expirationTimestamp);
+
+			user.setResetPasswordToken(tokenBuilder.toString());
+			user.setResetPasswordExpire(expirationTime);
+			userRepo.save(user);
+
+			tokenBuilder.toString();
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException("Error generating reset password token", e);
+		}
+		try {
+			SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+			simpleMailMessage.setTo(emailDto.getEmail());
+			simpleMailMessage.setSubject("Ecommerce Password Recovery");
+			String resetPasswordUrl = "http://localhost:8080/user/password/reset/" + tokenBuilder.toString();
+			String emailContent = "Your Password reset token is:<br><br><a href='" + resetPasswordUrl + "'>"
+					+ "</a><br><br>If you have not requested this, please ignore it.";
+			simpleMailMessage.setText(emailContent);
+
+			javaMailSender.send(simpleMailMessage);
+			return "Email successfully sent to " + emailDto.getEmail();
+		} catch (Exception e) {
+			user.setResetPasswordToken("");
+			user.setResetPasswordExpire(LocalDateTime.now());
+			userRepo.save(user);
+			throw new RuntimeException("enable to send email please try again");
+		}
+	}
+
+	@Override
+	public String resetPassword(String token, PasswordDto passwordDto, HttpSession session,
+			HttpServletResponse response) throws UserNotFoundException, ErrorHandler {
+		System.out.println("In reset Password");
+		if (passwordDto.getPassword() == null || passwordDto.getConfirmedPassword() == null) {
+			throw new ErrorHandler("Please Insert Password ");
+		}
+		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
+		StringBuilder hashedTokenBuilder = new StringBuilder();
+		try {
+			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+			byte[] hashBytes = messageDigest.digest(token.getBytes());
+
+			for (byte hashByte : hashBytes) {
+				hashedTokenBuilder.append(String.format("%02x", hashByte));
+			}
+
+			hashedTokenBuilder.toString();
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException("Error hashing token", e);
+		}
+		User user = userRepo.findByResetPasswordToken(token);
+		if (user == null) {
+			throw new UserNotFoundException("Reset Password token is invalid it has been expired");
+		}
+		if (passwordDto.getPassword().equals(passwordDto.getConfirmedPassword())) {
+
+			String encryptedPwd = bcrypt.encode(passwordDto.getPassword());
+			user.setPassword(encryptedPwd);
+			user.setResetPasswordToken("");
+			user.setResetPasswordExpire(LocalDateTime.now());
+
+			userRepo.save(user);
+			final String jwt = jwtUtil.generateToken(user.getId());
+			System.out.println("login user token= " + jwt);
+			Optional<User> opUser = userRepo.findById(user.getId());
+			session.setAttribute("user", opUser.get());
+			SaveCookie.sendToken(jwt, response);
+			return "Password Chnaged Successfully";
+		}
+		throw new UserNotFoundException("Password Doesn't match");
+
+	}
+
+	@Override
+	public UserResponseDto getUserDetails(HttpSession session) throws ErrorHandler {
+		User storedUser = (User) session.getAttribute("user");
+		if (storedUser == null) {
+			throw new ErrorHandler("Login first");
+		}
+		UserResponseDto userResponse = mapper.map(storedUser, UserResponseDto.class);
+		return userResponse;
+	}
+
+	@Override
+	public UserResponseDto updatePassword(UpdatePasswordDto upDto, HttpSession session)
+			throws ErrorHandler, UserNotFoundException {
+		User storedUser = (User) session.getAttribute("user");
+		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
+		if (storedUser == null) {
+			throw new ErrorHandler("Please Login first");
+		}
+		Optional<User> u = userRepo.findById(storedUser.getId());
+		User user = u.get();
+		if (user == null) {
+			throw new UserNotFoundException("User Not found");
+		}
+
+		if (bcrypt.matches(upDto.getOldPassword(), user.getPassword())) {
+			if (upDto.getNewPassword().equals(upDto.getConfirmedPassword())) {
+				String encryptedPwd = bcrypt.encode(upDto.getNewPassword());
+				user.setPassword(encryptedPwd);
+				userRepo.save(user);
+			} else {
+				throw new ErrorHandler("New Password doesn't match with confirmed Password");
+			}
+		} else {
+			throw new ErrorHandler("Password doesn't match with old password");
+		}
+		UserResponseDto userResponse = mapper.map(storedUser, UserResponseDto.class);
+		return userResponse;
+
+	}
+
+	@Override
+	public String updateUserProfile(UpdateUserProfileDto updateUserProfileDto, HttpSession session)
+			throws ErrorHandler, UserNotFoundException {
+		User storedUser = (User) session.getAttribute("user");
+
+		if (storedUser == null) {
+			throw new ErrorHandler("Please Login first");
+		}
+		Optional<User> u = userRepo.findById(storedUser.getId());
+		User user = u.get();
+		if (user == null) {
+			throw new UserNotFoundException("User Not found");
+		}
+
+		user.setName(updateUserProfileDto.getName());
+		user.setEmail(updateUserProfileDto.getEmail());
+		user.setAvatar(updateUserProfileDto.getAvatar());
+		userRepo.save(user);
+		return "User Profile Update Successfully";
+	}
+
+	@Override
+	public String updateUserRole(HttpSession session, String id, UpdateRole uRole)
+			throws ErrorHandler, UserNotFoundException {
+		User storedUser = (User) session.getAttribute("user");
+
+		if (storedUser == null) {
+			throw new ErrorHandler("Please Login first");
+		}
+
+		// Authorize user("Admin")
+		String userRole = storedUser.getRole();
+		if (userRole.equals("Admin")) {
+
+		} else {
+			throw new ErrorHandler(storedUser + " is not allowed to access this resource");
+		}
+
+		Optional<User> updateUser = userRepo.findById(id);
+		if (updateUser == null) {
+			throw new UserNotFoundException("Invalid user id");
+		}
+		User user = updateUser.get();
+		user.setRole(uRole.getRole());
+		userRepo.save(user);
+		return "User Role Updated Successsfully";
 	}
 
 }

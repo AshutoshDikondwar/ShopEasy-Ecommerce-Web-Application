@@ -20,7 +20,7 @@ public class Order {
 	//Add user in order Lastly
 	private ShippingInfo shippinginfo;
 	private PaymentInfo paymentinfo;
-	private LocalDate date;
+	private LocalDate date=LocalDate.now();
 	private double itemPrice;
 	private double taxPrice;
 	private double shippingPrice;
@@ -32,12 +32,11 @@ public class Order {
 		
 	}
 
-	public Order(ShippingInfo shippinginfo, PaymentInfo paymentinfo, LocalDate date, double itemPrice, double taxPrice,
+	public Order(ShippingInfo shippinginfo, PaymentInfo paymentinfo, double itemPrice, double taxPrice,
 			double shippingPrice, double totalPrice, String orderStatus) {
 		super();
 		this.shippinginfo = shippinginfo;
 		this.paymentinfo = paymentinfo;
-		this.date = date;
 		this.itemPrice = itemPrice;
 		this.taxPrice = taxPrice;
 		this.shippingPrice = shippingPrice;

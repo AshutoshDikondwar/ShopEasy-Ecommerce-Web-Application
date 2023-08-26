@@ -1,14 +1,13 @@
 package com.app.controller;
 
-import java.nio.file.AccessDeniedException;
+import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,9 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.collections.Product;
 import com.app.custom_exceptions.ErrorHandler;
-import com.app.custom_exceptions.MalFormedTokenException;
 import com.app.custom_exceptions.ResourceNotFoundException;
-import com.app.custom_exceptions.TokenExpiredException;
 import com.app.dto.ALlProductandCountDTO;
 import com.app.dto.ProductDto;
 import com.app.service.ProductService;
@@ -31,17 +28,14 @@ public class ProductController {
 	@Autowired
 	private ProductService productservice;
 
-	@PostMapping("/create")
-	public String createProduct(@RequestBody ProductDto productdto, @CookieValue(name = "tokenjwt", required = false) String tokenjwt,
-			HttpSession session) throws ResourceNotFoundException, AccessDeniedException, TokenExpiredException,
-			MalFormedTokenException, ErrorHandler {
-		System.out.println("token=====" + tokenjwt);
-		return productservice.createProduct(productdto, tokenjwt, session);
+	@PostMapping("/admin/create")
+	public String createProduct(@RequestBody ProductDto productdto, HttpSession session) throws ErrorHandler {
+		return productservice.createProduct(productdto, session);
 	}
 
-	@DeleteMapping("/deleteProduct")
-	public String deleteProduct(@RequestParam String id) {
-		return productservice.deleteProduct(id);
+	@DeleteMapping("/admin/delete/{id}")
+	public String deleteProduct(@PathVariable String id, HttpSession session) throws ErrorHandler {
+		return productservice.deleteProduct(id, session);
 	}
 
 	@GetMapping("/all")
@@ -55,13 +49,18 @@ public class ProductController {
 		return productservice.getAllProduct(keyword, category, lt, lte, gt, gte, page);
 	}
 
-	@GetMapping("/getProductById")
-	public Product getProductById(@RequestParam String id) throws ResourceNotFoundException {
+	@GetMapping("/admin/all")
+	public List<Product> getAllProductAdmin(HttpSession session) throws ErrorHandler {
+		return productservice.getAllProductsAdmin(session);
+	}
+
+	@GetMapping("/{id}")
+	public Product getProductById(@PathVariable String id) throws ResourceNotFoundException {
 		return productservice.getProductById(id);
 	}
 
-	@PutMapping("/updateProduct")
-	public Product updateProduct(@RequestBody ProductDto product) {
-		return productservice.updateProduct(product);
+	@PutMapping("/admin/update/{id}")
+	public Product updateProduct(@PathVariable String id, @RequestBody ProductDto product) {
+		return productservice.updateProduct(id, product);
 	}
 }

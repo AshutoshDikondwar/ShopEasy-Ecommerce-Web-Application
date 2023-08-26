@@ -15,10 +15,10 @@ public interface ProductRepository extends MongoRepository<Product, String> {
 	@Query("{'prodName':{$regex:?0, $options:'i'}}")
 	List<Product> findByRegexName(String keyword);
 
-	@Query("{'Category':{$regex:?0, $options:'i'}}")
+	@Query("{'category':{$regex:?0, $options:'i'}}")
 	List<Product> findByRegexCat(String keyword);
 
-	@Query("{'prodName':{$regex:?0, $options:'i'},'Category':{$regex:?1, $options:'i'}}")
+	@Query("{'prodName':{$regex:?0, $options:'i'},'category':{$regex:?1, $options:'i'}}")
 	List<Product> findByRegexNameAndCat(String keyword, String category);
 
 	@Query("{'price':{$lt:?0}}")

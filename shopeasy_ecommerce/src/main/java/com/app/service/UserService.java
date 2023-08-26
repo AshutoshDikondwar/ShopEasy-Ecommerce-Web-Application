@@ -13,23 +13,45 @@ import com.app.custom_exceptions.TokenExpiredException;
 import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.AuthRequest;
 import com.app.dto.AuthResponse;
+import com.app.dto.EmailDto;
+import com.app.dto.PasswordDto;
+import com.app.dto.UpdatePasswordDto;
+import com.app.dto.UpdateRole;
 import com.app.dto.UpdateUserDTO;
+import com.app.dto.UpdateUserProfileDto;
 import com.app.dto.UserDTO;
+import com.app.dto.UserResponseDto;
 
 public interface UserService {
 
-	String createUser(UserDTO user);
+	String createUser(UserDTO user) throws ErrorHandler;
 
-	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session) throws UserNotFoundException;
+	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session)
+			throws UserNotFoundException;
 
-	public String updateUser(String id, UpdateUserDTO updateDto) throws UserNotFoundException;
 
 	public String deleteUser(String id) throws UserNotFoundException;
 
-	public UserDTO getSingleUser(String id) throws UserNotFoundException;
+	public UserResponseDto getSingleUser(String id,HttpSession session) throws UserNotFoundException, ErrorHandler;
 
 	public List<UserDTO> findAllUser(String token, HttpSession session) throws AccessDeniedException,
 			TokenExpiredException, MalFormedTokenException, ResourceNotFoundException, ErrorHandler;
 
 	public String logout(HttpServletResponse res);
+
+	public String forgotPassword(EmailDto emailDto) throws UserNotFoundException;
+
+	public String resetPassword(String token, PasswordDto passwordDto, HttpSession session,
+			HttpServletResponse response) throws UserNotFoundException, ErrorHandler;
+
+	public UserResponseDto getUserDetails(HttpSession session) throws ErrorHandler;
+	
+	public UserResponseDto updatePassword(UpdatePasswordDto upDto, HttpSession session)
+			throws ErrorHandler, UserNotFoundException;
+	
+	public String updateUserProfile(UpdateUserProfileDto updateUserProfileDto, HttpSession session)
+			throws ErrorHandler, UserNotFoundException ;
+	
+	public String updateUserRole(HttpSession session, String id, UpdateRole uRole)
+			throws ErrorHandler, UserNotFoundException;
 }

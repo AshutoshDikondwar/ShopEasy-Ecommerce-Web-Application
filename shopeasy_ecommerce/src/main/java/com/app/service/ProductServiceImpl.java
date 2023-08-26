@@ -1,13 +1,11 @@
 package com.app.service;
 
-import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.modelmapper.ModelMapper;
@@ -21,17 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.app.collections.Product;
 import com.app.collections.User;
 import com.app.custom_exceptions.ErrorHandler;
-import com.app.custom_exceptions.MalFormedTokenException;
 import com.app.custom_exceptions.ResourceNotFoundException;
-import com.app.custom_exceptions.TokenExpiredException;
 import com.app.dto.ALlProductandCountDTO;
 import com.app.dto.ProductDto;
-import com.app.jwt.SaveCookie;
 import com.app.repository.ProductRepository;
-import com.app.repository.UserRepository;
-import com.app.util.JwtUtil;
-
-import io.jsonwebtoken.Claims;
 
 @Service
 @Transactional
@@ -43,17 +34,8 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private ModelMapper mapper;
 
-	@Autowired
-	private JwtUtil jwtUtil;
-
-	@Autowired
-	private UserRepository userRepo;
-
 	@Override
-	public String createProduct(ProductDto productdto, String tokenjwt, HttpSession session)
-			throws ResourceNotFoundException, AccessDeniedException, TokenExpiredException, MalFormedTokenException, ErrorHandler {
-
-
+	public String createProduct(ProductDto productdto, HttpSession session) throws ErrorHandler {
 
 //		// Authorize user("Admin")
 		User storedUser = (User) session.getAttribute("user");
@@ -61,7 +43,7 @@ public class ProductServiceImpl implements ProductService {
 		if (userRole.equals("Admin")) {
 
 		} else {
-			throw new ErrorHandler(storedUser + " is not allowed to access this resource");
+			throw new ErrorHandler(storedUser.getName() + " is not allowed to access this resource");
 		}
 
 		Product prod = mapper.map(productdto, Product.class);
@@ -70,8 +52,17 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public String deleteProduct(String id) {
+	public String deleteProduct(String id, HttpSession session) throws ErrorHandler {
 		String mesg = "Please enter a valid id";
+
+		// Authorize user("Admin")
+		User storedUser = (User) session.getAttribute("user");
+		String userRole = storedUser.getRole();
+		if (userRole.equals("Admin")) {
+
+		} else {
+			throw new ErrorHandler(storedUser.getName() + " is not allowed to access this resource");
+		}
 
 		if (productRepo.existsById(id)) {
 			productRepo.deleteById(id);
@@ -146,28 +137,40 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	public List<Product> getAllProductsAdmin(HttpSession session) throws ErrorHandler {
+		// Authorize user("Admin")
+		User storedUser = (User) session.getAttribute("user");
+		String userRole = storedUser.getRole();
+		if (userRole.equals("Admin")) {
+
+		} else {
+			throw new ErrorHandler(storedUser.getName() + " is not allowed to access this resource");
+		}
+		return productRepo.findAll();
+	}
+
+	@Override
 	public Product getProductById(String id) throws ResourceNotFoundException {
 		return productRepo.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Invalid Emp ID , Can't get emp details!!!!"));
 	}
 
 	@Override
-	public Product updateProduct(ProductDto product) {
+	public Product updateProduct(String id, ProductDto productDto) {
 
-		Optional<Product> productDb = this.productRepo.findByProdName(product.getProdName());
-//		Optional<Product> prod = productRepo.findByProdName(product.getProdName());
+		Optional<Product> opProduct = productRepo.findById(id);
 
-		if (productDb.isPresent()) {
-			Product productUpdate = productDb.get();
-//		            productUpdate.setProdName(product.getProdName());
-			productUpdate.setCategory(product.getCategory());
-			productUpdate.setDescription(product.getDescription());
-			productUpdate.setCreatedAt(product.getCreatedAt());
-			productUpdate.setImage(product.getImage());
-			productUpdate.setPrice(product.getPrice());
-			productUpdate.setStock(product.getStock());
+		if (opProduct.isPresent()) {
+			Product product = opProduct.get();
+			product.setProdName(productDto.getProdName());
+			product.setCategory(productDto.getCategory());
+			product.setDescription(productDto.getDescription());
+			product.setCreatedAt(productDto.getCreatedAt());
+			product.setImage(productDto.getImage());
+			product.setPrice(productDto.getPrice());
+			product.setStock(productDto.getStock());
 
-			return productRepo.save(productUpdate);
+			return productRepo.save(product);
 		}
 		return null;
 

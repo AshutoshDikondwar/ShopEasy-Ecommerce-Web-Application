@@ -10,5 +10,7 @@ import com.app.collections.User;
 public interface UserRepository extends MongoRepository<User, String> {
 	User findByEmail(String email);
 	
+	User findByResetPasswordToken(String token);
+	
 
 }

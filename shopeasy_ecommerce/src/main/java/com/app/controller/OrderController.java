@@ -2,6 +2,8 @@ package com.app.controller;
 
 import java.util.List;
 
+import javax.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.collections.Order;
+import com.app.custom_exceptions.ErrorHandler;
 import com.app.custom_exceptions.ResourceNotFoundException;
 import com.app.dto.OrderDto;
-
 import com.app.service.OrderService;
 
 @RestController
@@ -24,32 +26,32 @@ import com.app.service.OrderService;
 public class OrderController {
 	@Autowired
 	private OrderService orderservice;
-	
-	@PostMapping("/createorder")
-	public String createOrder( @RequestBody OrderDto orderdto) {
-		return	orderservice.createOrder(orderdto);
+
+	@PostMapping("/create")
+	public String createOrder(@RequestBody OrderDto orderdto, HttpSession session) throws ErrorHandler {
+		return orderservice.createOrder(orderdto, session);
 	}
-	
-	@GetMapping("/getOrders")
-	public List<Order>getAllOrders(){
-		return orderservice.getAllOrder();
+
+	@GetMapping("/admin/all")
+	public List<Order> getAllOrders(HttpSession session) throws ErrorHandler {
+		return orderservice.getAllOrder(session);
 	}
-	
-	@GetMapping("/getOrderById")
-	public Order getOrderById(@RequestParam String id) throws ResourceNotFoundException {
-		return orderservice.getOrderById(id);
+
+	@GetMapping("/{id}")
+	public Order getOrderById(@PathVariable String id, HttpSession session)
+			throws ResourceNotFoundException, ErrorHandler {
+		return orderservice.getOrderById(id, session);
 	}
-	
-	@DeleteMapping("/deleteOrder")
-	public String deleteOrder(@RequestParam String id) {
-		return orderservice.deleteOrder(id);
+
+	@DeleteMapping("/admin/delete/{id}")
+	public String deleteOrder(@PathVariable String id, HttpSession session) throws ErrorHandler {
+		return orderservice.deleteOrder(id, session);
 	}
-	
-	@PutMapping("/updateOrder")
-	public Order updateOrder(@RequestBody OrderDto orderdto) {
-		return orderservice.updateOrder(orderdto);
+
+	@PutMapping("/admin/{id}")
+	public Order updateOrderStatus(@PathVariable String id, @RequestBody String status, HttpSession session)
+			throws ErrorHandler {
+		return orderservice.updateOrderStatus(id, status, session);
 	}
-	
-	
 
 }
