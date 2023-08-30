@@ -11,6 +11,6 @@ public class UserResponseDto {
 	private String id;
 	private String name;
 	private String email;
-	private Avatar avatar;
+//	private Avatar avatar;
 	private String role;
 }

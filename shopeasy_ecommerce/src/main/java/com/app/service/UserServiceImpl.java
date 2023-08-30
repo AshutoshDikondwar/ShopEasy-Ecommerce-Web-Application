@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
@@ -29,7 +30,6 @@ import com.app.custom_exceptions.ResourceNotFoundException;
 import com.app.custom_exceptions.TokenExpiredException;
 import com.app.custom_exceptions.UserNotFoundException;
 import com.app.dto.AuthRequest;
-import com.app.dto.AuthResponse;
 import com.app.dto.EmailDto;
 import com.app.dto.PasswordDto;
 import com.app.dto.UpdatePasswordDto;
@@ -40,6 +40,7 @@ import com.app.dto.UserResponseDto;
 import com.app.jwt.SaveCookie;
 import com.app.repository.UserRepository;
 import com.app.util.JwtUtil;
+import com.cloudinary.Cloudinary;
 
 @Service
 @Transactional
@@ -56,10 +57,12 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private JavaMailSender javaMailSender;
+	
+	
 
 	// send user also in response
 	@Override
-	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session)
+	public UserResponseDto loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session)
 			throws UserNotFoundException {
 		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 
@@ -74,7 +77,9 @@ public class UserServiceImpl implements UserService {
 				final String jwt = jwtUtil.generateToken(user.getId());
 //				Optional<User> opUser = userRepo.findById(user.getId());
 				session.setAttribute("user", user);
-				return SaveCookie.sendToken(jwt, response);
+				 SaveCookie.sendToken(jwt, response);
+				 UserResponseDto userDto=mapper.map(user, UserResponseDto.class);
+				 return userDto;
 
 			} else {
 				throw new UserNotFoundException("Invalid Credentials");
@@ -84,19 +89,27 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public String createUser(UserDTO userDto) throws ErrorHandler {
+	public UserResponseDto createUser(UserDTO userDto,HttpSession session, HttpServletResponse response) throws ErrorHandler {
 
 		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
+	
 		User duplicateUser = userRepo.findByEmail(userDto.getEmail());
 		if (duplicateUser != null) {
 			throw new ErrorHandler("User alredy exists");
 		}
+		
 		User user = mapper.map(userDto, User.class);
 		String encryptedPwd = bcrypt.encode(user.getPassword());
 		user.setPassword(encryptedPwd);
+				
+		final String jwt = jwtUtil.generateToken(user.getId());
+		session.setAttribute("user", user);
+		 SaveCookie.sendToken(jwt, response);
 		userRepo.save(user);
+		 UserResponseDto u=mapper.map(user, UserResponseDto.class);
 
-		return user.getName();
+
+		return u;
 	}
 
 	// ADMIN
@@ -181,7 +194,6 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public String forgotPassword(EmailDto emailDto) throws UserNotFoundException {
-		System.out.println("User email " + emailDto.getEmail());
 
 		User user = userRepo.findByEmail(emailDto.getEmail());
 
@@ -291,11 +303,12 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserResponseDto updatePassword(UpdatePasswordDto upDto, HttpSession session)
 			throws ErrorHandler, UserNotFoundException {
-		User storedUser = (User) session.getAttribute("user");
+//		User storedUser = (User) session.getAttribute("user");
+		User storedUser=userRepo.findByEmail(upDto.getEmail());
 		BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-		if (storedUser == null) {
-			throw new ErrorHandler("Please Login first");
-		}
+//		if (storedUser == null) {
+//			throw new ErrorHandler("Please Login first");
+//		}
 		Optional<User> u = userRepo.findById(storedUser.getId());
 		User user = u.get();
 		if (user == null) {
@@ -319,24 +332,48 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public String updateUserProfile(UpdateUserProfileDto updateUserProfileDto, HttpSession session)
+	public String updateUserProfile(UpdateUserProfileDto updateUserProfileDto, HttpSession session,HttpServletRequest request)
 			throws ErrorHandler, UserNotFoundException {
-		User storedUser = (User) session.getAttribute("user");
+//		User storedUser = (User) session.getAttribute("user");
 
-		if (storedUser == null) {
-			throw new ErrorHandler("Please Login first");
-		}
-		Optional<User> u = userRepo.findById(storedUser.getId());
-		User user = u.get();
+		
+//		Cookie[] cookies=request.getCookies();
+//		String cookieValue = null;
+//        if (cookies != null) {
+//            for (Cookie cookie : cookies) {
+//            	System.out.println("cookieValue=== "+ cookieValue);
+//                if ("userr".equals(cookie.getName())) {
+//                    cookieValue = cookie.getValue();
+//                    break;
+//                }
+//            }
+//        }
+        
+//        if (cookieValue != null) {
+//            try {
+//            	tUser = mapper.map(cookieValue, User.class);
+//               
+//            } catch (Exception e) {
+//                // Handle JSON parsing exception
+//            }
+//        }
+		
+//		if (storedUser == null) {
+//			throw new ErrorHandler("Please Login first");
+//		}
+//		Optional<User> u = userRepo.findById(storedUser.getId());
+//		Optional<User> opUser = userRepo.findById(updateUserProfileDto.g);
+        User user=userRepo.findByEmail(updateUserProfileDto.getEmail());
+//		User user = opUser.get();
 		if (user == null) {
 			throw new UserNotFoundException("User Not found");
 		}
 
 		user.setName(updateUserProfileDto.getName());
 		user.setEmail(updateUserProfileDto.getEmail());
-		user.setAvatar(updateUserProfileDto.getAvatar());
+//		user.setAvatar(updateUserProfileDto.getAvatar());
 		userRepo.save(user);
-		return "User Profile Update Successfully";
+		return "success";
 	}
 
 	@Override

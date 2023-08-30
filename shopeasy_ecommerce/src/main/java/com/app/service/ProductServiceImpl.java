@@ -78,11 +78,9 @@ public class ProductServiceImpl implements ProductService {
 
 	@Override
 	public ALlProductandCountDTO getAllProduct(String keyword, String category, Double lt, Double lte, Double gt,
-			Double gte, Integer page) {
+			Double gte, Integer page) throws ErrorHandler {
 		List<Product> product = productRepo.findAll();
 		int count = (int) productRepo.count();
-
-//		Set<Product> p = new HashSet<>();
 
 		Map<String, Product> m = new HashMap<>();
 
@@ -124,14 +122,14 @@ public class ProductServiceImpl implements ProductService {
 
 		if (m.isEmpty()) {
 			// PAGINATION
-			int resultPerPage = 5;
+			int resultPerPage = 8;
 			int currentPage;
 			if (page == null) {
 				currentPage = 0;
 			} else {
 				currentPage = page;
 			}
-			Pageable pageable = PageRequest.of(currentPage, resultPerPage);
+			Pageable pageable = PageRequest.of(0, resultPerPage);
 			Page<Product> pg = productRepo.findAll(pageable);
 			return new ALlProductandCountDTO(pg.getContent(), count);
 		}
@@ -216,7 +214,7 @@ public class ProductServiceImpl implements ProductService {
 		for (Review r : product.getReview()) {
 			avg += r.getRating();
 		}
-		product.setRatings(avg / product.getReview().size());
+		product.setRating(avg / product.getReview().size());
 
 		productRepo.save(product);
 
@@ -259,9 +257,9 @@ public class ProductServiceImpl implements ProductService {
 			avg += r.getRating();
 		}
 		if (updatedReview.size() == 0) {
-			product.setRatings(0);
+			product.setRating(0);
 		} else {
-			product.setRatings(avg / product.getReview().size());
+			product.setRating(avg / product.getReview().size());
 		}
 		product.setNoOfReviews(updatedReview.size());
 		productRepo.save(product);

@@ -5,6 +5,7 @@ import java.util.List;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +25,7 @@ import com.app.service.OrderService;
 
 @RestController
 @RequestMapping("/order")
+@CrossOrigin(origins = "http://localhost:3000")
 public class OrderController {
 	@Autowired
 	private OrderService orderservice;

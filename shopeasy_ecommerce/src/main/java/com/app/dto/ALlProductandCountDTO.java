@@ -14,6 +14,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ALlProductandCountDTO {
-List<Product> product;
-int countProduct;
+private List<Product> product;
+private int productsCount;
 }

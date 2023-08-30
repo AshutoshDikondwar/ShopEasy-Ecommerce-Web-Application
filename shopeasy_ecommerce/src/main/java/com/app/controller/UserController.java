@@ -1,8 +1,10 @@
 package com.app.controller;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
@@ -12,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,22 +44,23 @@ import com.app.util.JwtUtil;
 
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
 	@Autowired
 	private UserService userService;
 
-
 	@PostMapping("/login")
-	public AuthResponse loginUser(@RequestBody AuthRequest loginDto, HttpServletResponse response, HttpSession session)
-			throws UserNotFoundException {
+	public UserResponseDto loginUser(@RequestBody AuthRequest loginDto, HttpServletResponse response,
+			HttpSession session) throws UserNotFoundException {
 		return userService.loginUser(loginDto, response, session);
 	}
 
 	@PostMapping("/register")
-	public String createUser(@Valid @RequestBody UserDTO user, HttpSession session) throws ErrorHandler {
-		userService.createUser(user);
-		return user.getName();
+	public UserResponseDto createUser(@Valid @RequestBody UserDTO user, HttpSession session,
+			HttpServletResponse response) throws ErrorHandler {
+		return userService.createUser(user, session, response);
+
 	}
 
 //	@PutMapping("/update/{id}")
@@ -112,9 +116,9 @@ public class UserController {
 	}
 
 	@PutMapping("/me/update")
-	public String updateUserProfile(@RequestBody UpdateUserProfileDto updateUserProfileDto, HttpSession session)
+	public String updateUserProfile(@RequestBody UpdateUserProfileDto updateUserProfileDto, HttpSession session,HttpServletRequest request)
 			throws ErrorHandler, UserNotFoundException {
-		return userService.updateUserProfile(updateUserProfileDto, session);
+		return userService.updateUserProfile(updateUserProfileDto, session,request);
 	}
 
 	@PutMapping("/admin/{id}")
@@ -122,7 +126,5 @@ public class UserController {
 			throws ErrorHandler, UserNotFoundException {
 		return userService.updateUserRole(session, id, uRole);
 	}
-
-
 
 }

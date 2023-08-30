@@ -5,6 +5,7 @@ import java.util.List;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ import com.app.service.ProductService;
 
 @RestController
 @RequestMapping("/product")
+@CrossOrigin(origins = "http://localhost:3000")
 public class ProductController {
 	@Autowired
 	private ProductService productservice;
@@ -47,8 +49,9 @@ public class ProductController {
 			@RequestParam(required = false) Double lte, @RequestParam(required = false) Double gt,
 			@RequestParam(required = false) Double gte, @RequestParam(required = false) Integer page
 
-	) {
+	) throws ErrorHandler {
 		System.out.println("keyword " + keyword + " Category " + category);
+		
 		return productservice.getAllProduct(keyword, category, lt, lte, gt, gte, page);
 	}
 
@@ -58,7 +61,7 @@ public class ProductController {
 	}
 
 	@GetMapping("/{id}")
-	public Product getProductById(@PathVariable String id) throws ResourceNotFoundException {
+	public Product getProductdetails(@PathVariable String id) throws ResourceNotFoundException {
 		return productservice.getProductById(id);
 	}
 

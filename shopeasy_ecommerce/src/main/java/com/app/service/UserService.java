@@ -1,8 +1,10 @@
 package com.app.service;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
@@ -24,9 +26,9 @@ import com.app.dto.UserResponseDto;
 
 public interface UserService {
 
-	String createUser(UserDTO user) throws ErrorHandler;
+	UserResponseDto createUser(UserDTO user,HttpSession session, HttpServletResponse response) throws ErrorHandler;
 
-	public AuthResponse loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session)
+	public UserResponseDto loginUser(AuthRequest loginDto, HttpServletResponse response, HttpSession session)
 			throws UserNotFoundException;
 
 
@@ -49,7 +51,7 @@ public interface UserService {
 	public UserResponseDto updatePassword(UpdatePasswordDto upDto, HttpSession session)
 			throws ErrorHandler, UserNotFoundException;
 	
-	public String updateUserProfile(UpdateUserProfileDto updateUserProfileDto, HttpSession session)
+	public String updateUserProfile(UpdateUserProfileDto updateUserProfileDto, HttpSession session,HttpServletRequest request)
 			throws ErrorHandler, UserNotFoundException ;
 	
 	public String updateUserRole(HttpSession session, String id, UpdateRole uRole)

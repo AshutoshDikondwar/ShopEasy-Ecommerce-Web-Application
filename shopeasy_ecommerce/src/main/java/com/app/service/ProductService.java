@@ -20,7 +20,7 @@ public interface ProductService {
 	public String deleteProduct(String id, HttpSession session) throws ErrorHandler;
 
 	ALlProductandCountDTO getAllProduct(String keyword, String category, Double lt, Double lte, Double gt, Double gte,
-			Integer page);
+			Integer page) throws ErrorHandler;
 
 	public List<Product> getAllProductsAdmin(HttpSession session) throws ErrorHandler;
 

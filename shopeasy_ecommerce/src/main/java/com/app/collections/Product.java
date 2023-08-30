@@ -22,7 +22,7 @@ public class Product {
 	private String prodName;
 	private String description;
 	private double price;
-	private int ratings;
+	private int rating;
 	private List<Image> image;
 	private String category;
 	private int stock;
@@ -49,13 +49,13 @@ public class Product {
 //		this.review = review;
 //		this.createdAt = createdAt;
 //	}
-	public Product(String prodName, String description, double price, int ratings, List<Image> image, String category,
+	public Product(String prodName, String description, double price, int rating, List<Image> image, String category,
 			int stock, int noOfReviews, List<Review> review, LocalDate createdAt) {
 		super();
 		this.prodName = prodName;
 		this.description = description;
 		this.price = price;
-		this.ratings = ratings;
+		this.rating = rating;
 		this.image = image;
 		this.category = category;
 		this.stock = stock;
